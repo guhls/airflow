@@ -1,3 +1,5 @@
+[![wakatime](https://wakatime.com/badge/user/af93572d-f069-49a1-bc1e-6447fee29a9a/project/bf31cfea-d31f-4b6d-b315-830362fe8170.svg)](https://wakatime.com/badge/user/af93572d-f069-49a1-bc1e-6447fee29a9a/project/bf31cfea-d31f-4b6d-b315-830362fe8170)
+
 # Final Goal
 ![flowchart_of_the_pipe](https://docs.google.com/uc?id=1PjAHf-yNlwsnR1Wqt4l7vj3MeVgZ-bCM)
 
