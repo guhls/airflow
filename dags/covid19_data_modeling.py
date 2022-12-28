@@ -37,7 +37,7 @@ def upload_data(*args, **kwargs):
     sheet_id = '1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk'  # noqa
     range_ = 'covid19!A1'
 
-    values = df.values.to_list()
+    values = df.values.tolist()
 
     result = sheet.values().update(
         spreadsheetId=sheet_id,
