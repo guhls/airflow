@@ -1,7 +1,14 @@
 import pyathena
 import pandas as pd
+from dotenv import load_dotenv
+import os
 
-conn = pyathena.connect(s3_staging_dir="s3://guhls-lake/covid19-vac/", region_name="us-east-2")
+load_dotenv()
+
+conn = pyathena.connect(
+    s3_staging_dir=os.environ.get('S3_STAGING_DIR'), 
+    region_name=os.environ.get('REGION_NAME')
+    )
 
 
 def get_data(query):

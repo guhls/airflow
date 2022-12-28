@@ -23,6 +23,12 @@ export AWS_SECRET_ACCESS_KEY=<aws_secret_access_key>
 export AWS_DEFAULT_REGION=<aws_default_region> 
 ~~~
 
+Update .env, Add aws constraints
+~~~
+ S3_STAGING_DIR=<s3_staging_dir>
+ REGION_NAME=<region_name>
+~~~
+
 ~~~shell
 docker-compose up
 ~~~
