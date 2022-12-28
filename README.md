@@ -1,3 +1,6 @@
+# Final Goal
+![flowchart_of_the_pipe](https://docs.google.com/uc?id=1PjAHf-yNlwsnR1Wqt4l7vj3MeVgZ-bCM)
+
 # Steps to Install and Configure the enviroment
 
 # Using Docker compose
