@@ -1,3 +1,6 @@
 __pycache__/
-credentials.json
 env/
+logs/
+plugins/
+.env
+dags/credentials.json
