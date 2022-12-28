@@ -2,7 +2,7 @@
 
 # Using Docker compose
 
-Using the docker-compose.yaml in the repository
+Use the docker-compose.yaml in this repository, because alright set up with enviroments and additional requirements
 
 Setting the right Airflow user
 ~~~shell
@@ -63,4 +63,15 @@ docker-compose down --volumes --rmi all
 # Added Credentials Google
 [Credentials Google Console](https://console.cloud.google.com/apis/credentials?hl=pt-br&project=<PROJECT_NAME>)
 
-Save the downloaded JSON file as credentials.json
+Save the downloaded JSON file as credentials.json in dags/
+
+---
+
+# Process Final
+
+![airflow_graph](https://docs.google.com/uc?id=1HqDIUJB2LvkB4ux6ViFxwrlbpoyvX13F)
+
+![data_in_google_sheets](https://docs.google.com/uc?id=1QoY_uKBcsEdXxsD9p4WEQ20BPCnIYweq)
+
+[The GSheet link](https://docs.google.com/spreadsheets/d/1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk/edit#gid=1762004493)
+
