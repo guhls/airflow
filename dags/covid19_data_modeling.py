@@ -2,7 +2,7 @@ from airflow.models import DAG
 from airflow.operators.python import PythonOperator
 import datetime as dt
 import funcs
-import creds
+import auth
 import pandas as pd
 from googleapiclient.discovery import build
 
@@ -31,7 +31,7 @@ def upload_data(*args, **kwargs):
     data = kwargs['task_instance'].xcom_pull(task_ids='process_data_task')
     df = pd.read_json(data)
 
-    service_sheets = build('sheets', 'v4', credentials=creds.get_creds())
+    service_sheets = build('sheets', 'v4', credentials=auth.creds.get_creds())
 
     sheet = service_sheets.spreadsheets()
     sheet_id = '1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk'  # noqa
