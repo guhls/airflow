@@ -14,7 +14,7 @@ def extract_data(*args, **kwargs):
         SELECT * 
         FROM "final"."covid19_vac_sp_view" 
         WHERE "vacina_dataaplicacao" = date('{date}')
-        LIMIT 10
+        LIMIT 100
     """
 
     df = funcs.get_data(query)
@@ -79,5 +79,5 @@ upload_data_task = PythonOperator(
 extract_data_task >> process_data_task >> upload_data_task
 
 if __name__ == '__main__':
-   data = extract_data()
+   data = extract_data({'date': '2022-11-16'})
    process_data(data) 
