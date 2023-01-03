@@ -30,7 +30,7 @@ export AWS_DEFAULT_REGION=<aws_default_region>
 ~~~
 
 ### Credentials Google Cloud
-- [Como criar uma conta de serviço/chave de serviço](https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount)
+- [Como criar uma conta/chave de serviço de serviço](https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount)
 
 - Save the key as credentials.json in the path /auth/ of this project
 
