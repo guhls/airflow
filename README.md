@@ -7,7 +7,7 @@
 
 ## Using Docker compose
 
-- Use the docker-compose.yaml in this repository, because alright set up with enviroments and additional requirements
+- Use the docker-compose.yaml of this repository, because alright set up for this project
 
 Setting the right Airflow user
 ~~~shell
@@ -30,9 +30,11 @@ export AWS_DEFAULT_REGION=<aws_default_region>
 ~~~
 
 ### Credentials Google Cloud
-[Download the credential in GCP](https://console.cloud.google.com/apis/credentials?hl=pt-br&project=<PROJECT_NAME>)
+- [Como criar uma conta de serviço/chave de serviço](https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount)
 
-- Save the downloaded JSON file as credentials.json in /auth
+- Save the key as credentials.json in the path /auth/ of this project
+
+- In gsheets share with email created to service account
 
 ### Update .env
 ~~~
