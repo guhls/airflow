@@ -3,5 +3,5 @@ env/
 logs/
 plugins/
 .env
-dags/credentials.json
-dags/token.json
+auth/credentials.json
+auth/token.json
