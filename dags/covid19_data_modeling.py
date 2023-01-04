@@ -1,52 +1,10 @@
 import datetime as dt
 
-import funcs
-import pandas as pd
 from airflow.models import DAG
 from airflow.operators.python import PythonOperator
-from googleapiclient.discovery import build
 
-import auth
-
-
-def extract_data(*args, **kwargs):
-    date = str(kwargs['date'])
-
-    query = f"""
-        SELECT * 
-        FROM "final"."covid19_vac_sp_view" 
-        WHERE "vacina_dataaplicacao" = date('{date}')
-        LIMIT 100
-    """
-
-    df = funcs.get_data(query)
-    return df.to_json()
-
-def process_data(*args, **kwargs):
-    data = kwargs['task_instance'].xcom_pull(task_ids='extract_data_task')
-    df = pd.read_json(data)
-    # Data Transform
-    ...
-    return df.to_json()
-
-def upload_data(*args, **kwargs):
-    data = kwargs['task_instance'].xcom_pull(task_ids='process_data_task')
-    df = pd.read_json(data)
-
-    service_sheets = build('sheets', 'v4', credentials=auth.creds.get_creds())
-
-    sheet = service_sheets.spreadsheets()
-    sheet_id = '1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk'  # noqa
-    range_ = 'covid19!A1'
-
-    values = df.values.tolist()
-
-    result = sheet.values().update(
-        spreadsheetId=sheet_id,
-        range=range_,
-        valueInputOption='RAW',
-        body={"values": values}
-    ).execute()
+from tasks.common.funcs import extract_data, upload_data
+from tasks.covid19_data_modeling.funcs import process_data
 
 default_args = {
     'owner': 'admin',

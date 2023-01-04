@@ -13,9 +13,4 @@ conn = pyathena.connect(
 
 
 def get_data(query):
-    df = pd.read_sql_query(query, conn)
-    return df
-
-
-if __name__  == '__main__':
-    get_data()
+    return pd.read_sql_query(query, conn)

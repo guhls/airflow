@@ -66,7 +66,9 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+    # Own Volumes
     - ./auth:/opt/airflow/auth
+    - ./tasks:/opt/airflow/tasks
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on

@@ -3,5 +3,5 @@ env/
 logs/
 plugins/
 .env
-auth/credentials.json
-auth/token.json
+auth/google/credentials.json
+auth/google/token.json
