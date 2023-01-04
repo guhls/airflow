@@ -1,10 +1,12 @@
+import datetime as dt
+
+import funcs
+import pandas as pd
 from airflow.models import DAG
 from airflow.operators.python import PythonOperator
-import datetime as dt
-import funcs
-import auth
-import pandas as pd
 from googleapiclient.discovery import build
+
+import auth
 
 
 def extract_data(*args, **kwargs):
