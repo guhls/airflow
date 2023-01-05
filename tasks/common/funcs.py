@@ -9,8 +9,8 @@ def extract_data(*args, **kwargs):
     date = str(kwargs['date'])
 
     query = f"""
-        SELECT * 
-        FROM "final"."covid19_vac_sp_view" 
+        SELECT *
+        FROM "final"."covid19_vac_sp_view"
         WHERE "vacina_dataaplicacao" = date('{date}')
         LIMIT 100
     """
@@ -31,7 +31,7 @@ def upload_data(*args, **kwargs):
 
     values = df.values.tolist()
 
-    result = sheet.values().update(
+    result = sheet.values().update( # noqa
         spreadsheetId=sheet_id,
         range=range_,
         valueInputOption='RAW',

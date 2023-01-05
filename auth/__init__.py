@@ -1,1 +1,1 @@
-from .google import creds
+from .google import creds  # noqa
