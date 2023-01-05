@@ -1,4 +1,10 @@
 {
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+
+    "python.languageServer": "Pylance", // ms-python.vscode-pylance
+    "python.linting.flake8Enabled": true,
+    
     "python.formatting.provider": "black",
     "python.formatting.blackArgs": ["--indent-size=4"],
     "python.linting.enabled": true,
