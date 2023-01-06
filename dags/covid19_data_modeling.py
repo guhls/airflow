@@ -8,7 +8,7 @@ from tasks.covid19_data_modeling.funcs import process_data
 
 default_args = {
     'owner': 'admin',
-    'start_date': dt.datetime(2022, 12, 1)
+    'start_date': dt.datetime(2023, 1, 1)
 }
 
 dag = DAG(
@@ -37,7 +37,3 @@ upload_data_task = PythonOperator(
 )
 
 extract_data_task >> process_data_task >> upload_data_task
-
-if __name__ == '__main__':
-    data = extract_data({'date': '2022-11-16'})
-    process_data(data)

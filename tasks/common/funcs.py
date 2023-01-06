@@ -1,7 +1,9 @@
+import pdb
+
 import pandas as pd
 from googleapiclient.discovery import build
 
-import auth
+from auth.google.creds import get_creds
 from tasks.athena.funcs import get_data
 
 
@@ -16,6 +18,7 @@ def extract_data(*args, **kwargs):
     """
 
     df = get_data(query)
+    pdb.set_trace()
     return df.to_json()
 
 
@@ -23,7 +26,9 @@ def upload_data(*args, **kwargs):
     data = kwargs["task_instance"].xcom_pull(task_ids="process_data_task")
     df = pd.read_json(data)
 
-    service_sheets = build("sheets", "v4", credentials=auth.google.creds.get_creds()) # noqa
+    service_sheets = build(
+        "sheets", "v4", credentials=get_creds()
+    )
 
     sheet = service_sheets.spreadsheets()
     sheet_id = "1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk"
@@ -31,7 +36,7 @@ def upload_data(*args, **kwargs):
 
     values = df.values.tolist()
 
-    result = ( # noqa
+    result = (  # noqa
         sheet.values()
         .update(
             spreadsheetId=sheet_id,
