@@ -1,5 +1,3 @@
-import pdb
-
 import pandas as pd
 from googleapiclient.discovery import build
 
@@ -18,7 +16,6 @@ def extract_data(*args, **kwargs):
     """
 
     df = get_data(query)
-    pdb.set_trace()
     return df.to_json()
 
 
@@ -34,7 +31,9 @@ def upload_data(*args, **kwargs):
     sheet_id = "1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk"
     range_ = "covid19!A1"
 
-    values = df.values.tolist()
+    values = [list(df)] + df.values.tolist()[0:]
+
+    sheet.values().clear(spreadsheetId=sheet_id, range="covid19!A1:L")
 
     result = (  # noqa
         sheet.values()

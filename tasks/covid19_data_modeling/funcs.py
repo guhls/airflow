@@ -1,5 +1,3 @@
-import pdb
-
 import pandas as pd
 
 
@@ -8,5 +6,4 @@ def process_data(*args, **kwargs):
     df = pd.read_json(data)
     # Data Transform
     ...
-    pdb.set_trace()
     return df.to_json()
