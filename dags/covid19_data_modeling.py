@@ -17,10 +17,18 @@ dag = DAG(
     default_args=default_args
 )
 
+
+query = """
+        SELECT *
+        FROM "final"."covid19_vac_sp_view"
+        WHERE "vacina_dataaplicacao" = date('2022-11-15')
+        LIMIT 20
+    """
+
 extract_data_task = PythonOperator(
     task_id='extract_data_task',
     python_callable=extract_data,
-    op_kwargs={"date": '2022-11-16'},
+    op_kwargs={"query": query},
     dag=dag
 )
 
@@ -30,9 +38,14 @@ process_data_task = PythonOperator(
     dag=dag
 )
 
+
+sheet_id = "1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk"
+range_ = "covid19!A1"
+
 upload_data_task = PythonOperator(
     task_id='upload_data_task',
     python_callable=upload_data,
+    op_kwargs={"sheet_id": sheet_id, "range": range_},
     dag=dag
 )
 
