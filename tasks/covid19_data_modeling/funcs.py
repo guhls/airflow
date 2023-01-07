@@ -6,4 +6,4 @@ def process_data(*args, **kwargs):
     df = pd.read_json(data)
     # Data Transform
     ...
-    return df.to_json()
+    return df.to_json(orient='index', date_format='iso')

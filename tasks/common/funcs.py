@@ -10,7 +10,7 @@ def extract_data(*args, **kwargs):
 
     df = get_data(query)
 
-    return df.to_json()
+    return df.to_json(orient='index', date_format='iso')
 
 
 def upload_data(*args, **kwargs):
