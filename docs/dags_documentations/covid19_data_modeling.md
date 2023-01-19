@@ -1,4 +1,4 @@
-# Fill some data of data.gov to a table in AWS Athena
+# Populate some data of data.gov to a table in AWS Athena
 
 ![flowchart_of_the_pipe](https://docs.google.com/uc?id=1PjAHf-yNlwsnR1Wqt4l7vj3MeVgZ-bCM)
 
