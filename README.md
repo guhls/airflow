@@ -73,3 +73,4 @@ docker-compose down --volumes --rmi all
 ~~~
 
 # DAGs docs
+[covid19_data_modeling](https://github.com/guhls/airflow/blob/main/docs/dags_documentations/covid19_data_modeling.md)
