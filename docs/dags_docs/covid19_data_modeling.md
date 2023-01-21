@@ -31,15 +31,35 @@ export AWS_DEFAULT_REGION=<aws_default_region>
 
 ![flowchart_of_the_pipe](https://docs.google.com/uc?id=1PjAHf-yNlwsnR1Wqt4l7vj3MeVgZ-bCM)
 
-## Process Final
+## How the pipeline works
 
-![airflow_graph](https://docs.google.com/uc?id=1HqDIUJB2LvkB4ux6ViFxwrlbpoyvX13F)
+The pipeline follows an ETL flow with the following steps:
 
-## The DAG Code
+1. extract_data_task:
+    - Extract data from the view covid19_vac_sp_view using the pandas library to create a dataframe and pyathena to create the connection
+    - Converts and returns dataframe data in json
 
-[covid19_data_modeling.py](https://github.com/guhls/airflow/blob/main/dags/covid19_data_modeling.py)
+2. process_data_task:
+    - working on it
 
-![data_in_google_sheets](https://docs.google.com/uc?id=1QoY_uKBcsEdXxsD9p4WEQ20BPCnIYweq)
-Mantido um limit 10 na query na etapa extract_data_task
+3. upload_data_task:
+    - Retrieve data from process_data_task  
+    - Creates the connection to the "sheets" service using the googleapiclient lib
+    - Load the data into the [Gsheet worksheet](https://docs.google.com/spreadsheets/d/1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk/edit#gid=1762004493)
 
-[The GSheet link](https://docs.google.com/spreadsheets/d/1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk/edit#gid=1762004493)
+**Check the pipeline code here:** [covid19_data_modeling.py](https://github.com/guhls/airflow/blob/main/dags/covid19_data_modeling.py)
+
+## Services Used
+
+- Python Libs:
+  - Pandas
+  - Pyathena
+  - Datetime
+  - Google api client
+
+- AWS services:
+  - S3
+  - Athena
+
+- API:
+  - Google sheets
