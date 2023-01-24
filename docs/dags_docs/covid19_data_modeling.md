@@ -27,9 +27,9 @@ export AWS_DEFAULT_REGION=<aws_default_region>
  REGION_NAME=<region_name>
 ~~~
 
-## Pipeline Flowchart
+## Pipeline Diagram
 
-![flowchart_of_the_pipe](https://docs.google.com/uc?id=1PjAHf-yNlwsnR1Wqt4l7vj3MeVgZ-bCM)
+![flowchart_of_the_pipe](../dags_diagrams/covid19_data_modeling.png)
 
 ## How the pipeline works
 
