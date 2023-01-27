@@ -43,6 +43,12 @@ def get_df_from_ids(ids):
     return df_final
 
 
+def populate_cnes_info(df, conn):
+    df\
+        .sort_values(by='codigo_cnes')\
+        .to_sql('cnes_info', conn, index=False, if_exists="append")
+
+
 def get_or_add_data(cnes_ids):
     engine = create_engine(
         "postgresql://postgres:681FtDgF8EoiwJ5alKIf@postegres-ec2.c6gbgu5unapw.us-east-2.rds.amazonaws.com/postgres_db"
@@ -67,9 +73,7 @@ def get_or_add_data(cnes_ids):
                 ids_to_add = set(cnes_ids) - set(cnes_df_ids)
                 if ids_to_add:
                     df = get_df_from_ids(ids_to_add)
-                    df[columns]\
-                        .sort_values(by='codigo_cnes')\
-                        .to_sql('cnes_info', conn, index=False, if_exists="append")
+                    populate_cnes_info(df[columns], conn)
                 else:
                     return cnes_df
             else:
@@ -81,9 +85,7 @@ def get_or_add_data(cnes_ids):
         # ProgrammingError: psycopg2.errors.UndenfinedTable occurs when table not exists
         except ProgrammingError:
             df = get_df_from_ids(cnes_ids)
-            df[columns]\
-                .sort_values(by='codigo_cnes')\
-                .to_sql('cnes_info', conn, index=False, if_exists="append")
+            populate_cnes_info(df[columns], conn)
 
             return df[columns]
 
@@ -178,4 +180,4 @@ extract_data_task >> process_data_task >> upload_data_task
 
 
 if __name__ == "__main__":
-    get_or_add_data([124, 9997423, 429031, 429023])
+    get_df_from_ids([124, 9997423, 429031, 429023, 35])
