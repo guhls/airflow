@@ -5,8 +5,8 @@ import requests
 
 import pandas as pd
 import pyathena
-from airflow.models import DAG
-from airflow.operators.python import PythonOperator
+from airflow.models import DAG # noqa
+from airflow.operators.python import PythonOperator # noqa
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from sqlalchemy import create_engine
@@ -30,8 +30,8 @@ def get_data(query_athena):
 
 def get_df_from_ids(ids):
     lst_dfs = []
-    for id in ids:
-        uri = f"https://apidadosabertos.saude.gov.br/cnes/estabelecimentos/{id}"
+    for cnes_id in ids:
+        uri = f"https://apidadosabertos.saude.gov.br/cnes/estabelecimentos/{cnes_id}"
         resp_data = requests.get(uri).json()
 
         df = pd.json_normalize(resp_data)
@@ -88,15 +88,15 @@ def get_or_add_data(cnes_ids):
 # Tasks functions
 
 
-def extract_data(*args, **kwargs):
-    query = str(kwargs["query"])
+def extract_data(**kwargs):
+    query_athena = str(kwargs["query"])
 
-    df = get_data(query)
+    df = get_data(query_athena)
 
     return df.to_json(orient="index", date_format="iso")
 
 
-def process_data(*args, **kwargs):
+def process_data(**kwargs):
     data = kwargs["task_instance"].xcom_pull(task_ids="extract_data_task")
     df = pd.read_json(data)
 
@@ -105,10 +105,10 @@ def process_data(*args, **kwargs):
     return df.to_json(orient="index", date_format="iso")
 
 
-def upload_data(*args, **kwargs):
+def upload_data(**kwargs):
     data = kwargs["task_instance"].xcom_pull(task_ids="process_data_task")
-    sheet_id = str(kwargs["sheet_id"])
-    range_ = str(kwargs["range"])
+    sheets_id = str(kwargs["sheet_id"])
+    range_sheet = str(kwargs["range"])
 
     df = pd.read_json(data)
 
@@ -118,13 +118,13 @@ def upload_data(*args, **kwargs):
 
     values = [list(df)] + df.values.tolist()[0:]
 
-    sheet.values().clear(spreadsheetId=sheet_id, range=range_)
+    sheet.values().clear(spreadsheetId=sheets_id, range=range_sheet)
 
     result = (  # noqa
         sheet.values()
         .update(
-            spreadsheetId=sheet_id,
-            range=range_,
+            spreadsheetId=sheets_id,
+            range=range_sheet,
             valueInputOption="RAW",
             body={"values": values},
         )
