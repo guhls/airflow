@@ -16,12 +16,15 @@ from auth.google.creds import get_creds
 
 load_dotenv()
 
+S3_COVID_EXTRACT = os.environ.get("S3_COVID_EXTRACT")
+S3_COVID_PROCESS = os.environ.get("S3_COVID_PROCESS")
+
 # Functions
 
 
-def get_data(query_athena):
+def get_data(query_athena, s3_staging_dir):
     conn = pyathena.connect(
-        s3_staging_dir=os.environ.get("S3_STAGING_DIR"),
+        s3_staging_dir=s3_staging_dir,
         region_name=os.environ.get("REGION_NAME"),
     )
 
@@ -91,7 +94,7 @@ def get_or_add_data(cnes_ids):
 def extract_data(**kwargs):
     query_athena = str(kwargs["query"])
 
-    df = get_data(query_athena)
+    df = get_data(query_athena, S3_COVID_EXTRACT)
 
     return df.to_json(orient="index", date_format="iso")
 
