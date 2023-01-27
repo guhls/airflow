@@ -59,17 +59,31 @@ def get_or_add_data(cnes_ids):
     with engine.connect() as conn:
         try:
             cnes_df = pd.read_sql_query(query_cnes, conn)
-            cnes_df_ids = cnes_df['codigo_cnes'].values.tolist()
+            if not cnes_df.empty:
+                cnes_df_ids = cnes_df['codigo_cnes'].values.tolist()
 
-            ids_to_add = set(cnes_ids) - set(cnes_df_ids)
-            if ids_to_add:
-                df = get_df_from_ids(ids_to_add)
+                ids_to_add = set(cnes_ids) - set(cnes_df_ids)
+                if ids_to_add:
+                    df = get_df_from_ids(ids_to_add)
+                    df[columns]\
+                        .sort_values(by='codigo_cnes')\
+                        .to_sql('cnes_info', conn, index=False, if_exists="append")
+                else:
+                    return cnes_df
+            else:
+                df = get_df_from_ids(cnes_ids)
+                return df[columns]
 
+            return pd.concat([cnes_df, df[columns]]).reset_index(drop=True)
+
+        # ProgrammingError: psycopg2.errors.UndenfinedTable occurs when table not exists
         except ProgrammingError:
             df = get_df_from_ids(cnes_ids)
-            df[columns].to_sql('cnes_info', conn, index=False)
+            df[columns]\
+                .sort_values(by='codigo_cnes')\
+                .to_sql('cnes_info', conn, index=False, if_exists="append")
 
-    return df
+            return df[columns]
 
 # Tasks functions
 
@@ -162,4 +176,4 @@ extract_data_task >> process_data_task >> upload_data_task
 
 
 if __name__ == "__main__":
-    get_or_add_data([124, 9997423])
+    get_or_add_data([124, 9997423, 429031, 429023])
