@@ -6,3 +6,4 @@ plugins/
 auth/google/credentials.json
 auth/google/token.json
 .mypy_cache/
+.idea/*
