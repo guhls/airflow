@@ -17,7 +17,6 @@ from auth.google.creds import get_creds
 load_dotenv()
 
 S3_COVID_EXTRACT = os.environ.get("S3_COVID_EXTRACT")
-S3_COVID_PROCESS = os.environ.get("S3_COVID_PROCESS")
 
 # Functions
 
