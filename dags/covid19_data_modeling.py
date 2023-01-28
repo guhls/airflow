@@ -33,7 +33,7 @@ path_root = Path(__file__).parent.parent
 # Functions
 
 
-def get_data(query_athena, s3_staging_dir):
+def get_data_from_athena(query_athena, s3_staging_dir):
     conn = pyathena.connect(
         s3_staging_dir=s3_staging_dir,
         region_name=os.environ.get("REGION_NAME"),
@@ -61,6 +61,21 @@ def populate_cnes_info(df, conn):
         .to_sql('cnes_info', conn, index=False, if_exists="append")
 
 
+def rename_cnes_df(df):
+    columns = {
+        'codigo_cnes': 'cnes_id',
+        'nome_razao_social': 'nome_razao_social',
+        'nome_fantasia': 'nome_fantasia',
+        'codigo_cep_estabelecimento': 'cep_estabelecimento',
+        'endereco_estabelecimento': 'endereco_estabelecimento',
+        'numero_estabelecimento': 'numero_estabelecimento',
+        'bairro_estabelecimento': 'bairro_estabelecimento',
+        'latitude_estabelecimento_decimo_grau': 'latitude_estabelecimento',
+        'longitude_estabelecimento_decimo_grau': 'longitude_estabelecimento'
+    }
+    return df.rename(columns, axis=1)[columns.values()]
+
+
 def get_or_add_data(cnes_ids):
     try:
         conn = psycopg2.connect(**POSTGRES_ENV)
@@ -78,9 +93,6 @@ def get_or_add_data(cnes_ids):
                     .replace("}", ")")}
             """
 
-    columns = ['codigo_cnes', 'nome_razao_social', 'nome_fantasia', 'codigo_cep_estabelecimento',
-               'endereco_estabelecimento', 'numero_estabelecimento']
-
     with conn:
         try:
             cnes_df = pd.read_sql_query(query_cnes, conn)
@@ -90,21 +102,24 @@ def get_or_add_data(cnes_ids):
                 ids_to_add = set(cnes_ids) - set(cnes_df_ids)
                 if ids_to_add:
                     df = get_df_from_ids(ids_to_add)
-                    populate_cnes_info(df[columns], conn)
+                    df = rename_cnes_df(df)
+                    populate_cnes_info(df, conn)
                 else:
                     return cnes_df
             else:
                 df = get_df_from_ids(cnes_ids)
-                return df[columns]
+                df = rename_cnes_df(df)
+                return df
 
-            return pd.concat([cnes_df, df[columns]]).reset_index(drop=True)
+            return pd.concat([cnes_df, df]).reset_index(drop=True)
 
         # pandas.errors.DatabaseError: Table not exists
         except pandas.errors.DatabaseError:
             df = get_df_from_ids(cnes_ids)
-            populate_cnes_info(df[columns], conn)
+            df = rename_cnes_df(df)
+            populate_cnes_info(df, conn)
 
-            return df[columns]
+            return df
 
 # Tasks functions
 
@@ -112,7 +127,7 @@ def get_or_add_data(cnes_ids):
 def extract_data(**kwargs):
     query_athena = str(kwargs["query"])
 
-    df = get_data(query_athena, S3_COVID_EXTRACT)
+    df = get_data_from_athena(query_athena, S3_COVID_EXTRACT)
 
     return df.to_json(orient="index", date_format="iso")
 
