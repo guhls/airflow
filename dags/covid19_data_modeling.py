@@ -1,7 +1,10 @@
 # Imports
 import datetime as dt
 import os
+
+import pandas.errors
 import requests
+from pathlib import Path
 
 import pandas as pd
 import pyathena
@@ -9,14 +12,23 @@ from airflow.models import DAG # noqa
 from airflow.operators.python import PythonOperator # noqa
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
-from sqlalchemy import create_engine
-from sqlalchemy.exc import ProgrammingError
+import psycopg2
+import sqlite3
 
 from auth.google.creds import get_creds
 
 load_dotenv()
 
 S3_COVID_EXTRACT = os.environ.get("S3_COVID_EXTRACT")
+POSTGRES_ENV = {
+    'host': os.environ.get("host"),
+    'database': os.environ.get("database"),
+    'user': os.environ.get("user"),
+    'password': os.environ.get("password"),
+    'connect_timeout': int(os.environ.get("connect_timeout"))
+}
+
+path_root = Path(__file__).parent.parent
 
 # Functions
 
@@ -50,9 +62,14 @@ def populate_cnes_info(df, conn):
 
 
 def get_or_add_data(cnes_ids):
-    engine = create_engine(
-        "postgresql://postgres:681FtDgF8EoiwJ5alKIf@postegres-ec2.c6gbgu5unapw.us-east-2.rds.amazonaws.com/postgres_db"
-    )
+    try:
+        conn = psycopg2.connect(**POSTGRES_ENV)
+    except psycopg2.OperationalError as e:
+        print(f"Connection with database PostgreSQL expire: {e}, creating conn with local db in sqlite...")
+
+        conn = sqlite3.connect(f"{path_root}/db_local.db")
+
+        print("Connect with Sqlite Database")
 
     query_cnes = f"""SELECT *
                 FROM cnes_info
@@ -64,7 +81,7 @@ def get_or_add_data(cnes_ids):
     columns = ['codigo_cnes', 'nome_razao_social', 'nome_fantasia', 'codigo_cep_estabelecimento',
                'endereco_estabelecimento', 'numero_estabelecimento']
 
-    with engine.connect() as conn:
+    with conn:
         try:
             cnes_df = pd.read_sql_query(query_cnes, conn)
             if not cnes_df.empty:
@@ -82,8 +99,8 @@ def get_or_add_data(cnes_ids):
 
             return pd.concat([cnes_df, df[columns]]).reset_index(drop=True)
 
-        # ProgrammingError: psycopg2.errors.UndenfinedTable occurs when table not exists
-        except ProgrammingError:
+        # pandas.errors.DatabaseError: Table not exists
+        except pandas.errors.DatabaseError:
             df = get_df_from_ids(cnes_ids)
             populate_cnes_info(df[columns], conn)
 
@@ -180,4 +197,4 @@ extract_data_task >> process_data_task >> upload_data_task
 
 
 if __name__ == "__main__":
-    get_df_from_ids([124, 9997423, 429031, 429023, 35])
+    get_or_add_data([124, 9997423, 429031, 429023, 35])
