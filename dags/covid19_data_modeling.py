@@ -55,14 +55,15 @@ def get_df_from_ids(ids):
     return df_final
 
 
+# TODO: Fazer com que popule com todos os dados do dataframe
 def populate_cnes_info(df, conn):
     df\
-        .sort_values(by='codigo_cnes')\
+        .sort_values(by='cnes_id')\
         .to_sql('cnes_info', conn, index=False, if_exists="append")
 
 
 def rename_cnes_df(df):
-    columns = {
+    columns_to_rename = {
         'codigo_cnes': 'cnes_id',
         'nome_razao_social': 'nome_razao_social',
         'nome_fantasia': 'nome_fantasia',
@@ -73,10 +74,12 @@ def rename_cnes_df(df):
         'latitude_estabelecimento_decimo_grau': 'latitude_estabelecimento',
         'longitude_estabelecimento_decimo_grau': 'longitude_estabelecimento'
     }
-    return df.rename(columns, axis=1)[columns.values()]
+
+    columns = list(columns_to_rename.values())
+    return df.rename(columns_to_rename, axis=1)[columns[:2] + columns[3:]]
 
 
-def get_or_add_data(cnes_ids):
+def get_data_from_cnes(cnes_ids):
     try:
         conn = psycopg2.connect(**POSTGRES_ENV)
     except psycopg2.OperationalError as e:
@@ -84,7 +87,7 @@ def get_or_add_data(cnes_ids):
 
         conn = sqlite3.connect(f"{path_root}/db_local.db")
 
-        print("Connect with Sqlite Database")
+        print("Connected with Sqlite Database")
 
     query_cnes = f"""SELECT *
                 FROM cnes_info
@@ -129,16 +132,20 @@ def extract_data(**kwargs):
 
     df = get_data_from_athena(query_athena, S3_COVID_EXTRACT)
 
-    return df.to_json(orient="index", date_format="iso")
+    return df.to_json(orient="columns", date_format="iso")
 
 
+# TODO: Alterar os valores da coluna vacina_data para o formato da data %Y-%m-%d
 def process_data(**kwargs):
     data = kwargs["task_instance"].xcom_pull(task_ids="extract_data_task")
     df = pd.read_json(data)
 
-    # cnes_code = df['estabelecimento_valor'].values.tolist()
+    cnes_code = df['cnes_id'].values.tolist()
+    cnes_df = get_data_from_cnes(cnes_code)
 
-    return df.to_json(orient="index", date_format="iso")
+    df = df.merge(cnes_df, how='inner', on='cnes_id')
+
+    return df.to_json(orient="columns", date_format="iso")
 
 
 def upload_data(**kwargs):
@@ -154,7 +161,7 @@ def upload_data(**kwargs):
 
     values = [list(df)] + df.values.tolist()[0:]
 
-    sheet.values().clear(spreadsheetId=sheets_id, range=range_sheet)
+    sheet.values().clear(spreadsheetId=sheets_id, range=range_sheet).execute()
 
     result = (  # noqa
         sheet.values()
@@ -182,7 +189,8 @@ dag = DAG(
 query = """
         SELECT *
         FROM "final"."covid19_vac_sp_view"
-        WHERE "vacina_dataaplicacao" = date('2022-11-15')
+        WHERE "vacina_dataaplicacao" = date('2023-01-20')
+        ORDER BY "estabelecimento_valor" DESC
         LIMIT 20
     """
 
@@ -199,7 +207,7 @@ process_data_task = PythonOperator(
 
 
 sheet_id = "1g7PgVQqFSXcZhySLQahgA0Cz9AvMFVN71RF3F7z1SRk"
-range_ = "covid19!A1"
+range_ = "covid19!A1:V"
 
 upload_data_task = PythonOperator(
     task_id="upload_data_task",
@@ -212,4 +220,4 @@ extract_data_task >> process_data_task >> upload_data_task
 
 
 if __name__ == "__main__":
-    get_or_add_data([124, 9997423, 429031, 429023, 35])
+    get_data_from_cnes([124, 9997423, 429031, 429023, 35])

@@ -40,7 +40,8 @@ The pipeline follows an ETL flow with the following steps:
     - Converts and returns dataframe data in json
 
 2. process_data_task:
-    - working on it
+    - Datasets Used:
+      - (Cadastro Nacional de Estabelecimentos de Saúde (CNES))[https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-de-estabelecimentos-de-saude-cnes1]
 
 3. upload_data_task:
     - Retrieve data from process_data_task  
