@@ -129,6 +129,29 @@ def get_data_from_cnes(cnes_ids):
 
             return df
 
+
+def send_df_to_sheets(df, sheets_id, range_sheet):
+    service_sheets = build("sheets", "v4", credentials=get_creds())
+
+    sheet = service_sheets.spreadsheets()
+
+    values = [list(df)] + df.values.tolist()[0:]
+
+    sheet.values().clear(spreadsheetId=sheets_id, range=range_sheet).execute()
+
+    result = (  # noqa
+        sheet.values()
+        .update(
+            spreadsheetId=sheets_id,
+            range=range_sheet,
+            valueInputOption="RAW",
+            body={"values": values},
+        )
+        .execute()
+    )
+
+    return result
+
 # Tasks functions
 
 
@@ -160,25 +183,7 @@ def upload_data(**kwargs):
     range_sheet = str(kwargs["range"])
 
     df = pd.read_json(data)
-
-    service_sheets = build("sheets", "v4", credentials=get_creds())
-
-    sheet = service_sheets.spreadsheets()
-
-    values = [list(df)] + df.values.tolist()[0:]
-
-    sheet.values().clear(spreadsheetId=sheets_id, range=range_sheet).execute()
-
-    result = (  # noqa
-        sheet.values()
-        .update(
-            spreadsheetId=sheets_id,
-            range=range_sheet,
-            valueInputOption="RAW",
-            body={"values": values},
-        )
-        .execute()
-    )
+    send_df_to_sheets(df, sheets_id, range_sheet)
 
 
 # DAG
