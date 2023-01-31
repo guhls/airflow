@@ -140,7 +140,6 @@ def extract_data(**kwargs):
     return df.to_json(orient="columns", date_format="iso")
 
 
-# TODO: Alterar os valores da coluna vacina_data para o formato da data %Y-%m-%d
 def process_data(**kwargs):
     data = kwargs["task_instance"].xcom_pull(task_ids="extract_data_task")
     df = pd.read_json(data)
@@ -149,6 +148,8 @@ def process_data(**kwargs):
     cnes_df = get_data_from_cnes(cnes_code)
 
     df = df.merge(cnes_df, how='inner', on='cnes_id')
+    df['vacina_dataaplicacao'] = df['vacina_dataaplicacao']\
+        .apply(lambda date: dt.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.000").date()).astype(str)
 
     return df.to_json(orient="columns", date_format="iso")
 
