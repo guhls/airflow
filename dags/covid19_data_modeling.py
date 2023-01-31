@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 import pyathena
+from pyathena.pandas.cursor import PandasCursor
 from airflow.models import DAG # noqa
 from airflow.operators.python import PythonOperator # noqa
 from dotenv import load_dotenv
@@ -37,9 +38,13 @@ def get_data_from_athena(query_athena, s3_staging_dir):
     conn = pyathena.connect(
         s3_staging_dir=s3_staging_dir,
         region_name=os.environ.get("REGION_NAME"),
+        cursor_class=PandasCursor
     )
 
-    return pd.read_sql_query(query_athena, conn)
+    with conn.cursor() as cur:
+        df = cur.execute(query_athena).as_pandas()
+
+    return df
 
 
 def get_df_from_ids(ids):
@@ -190,7 +195,7 @@ query = """
         SELECT *
         FROM "final"."covid19_vac_sp_view"
         WHERE "vacina_dataaplicacao" = date('2023-01-20')
-        ORDER BY "estabelecimento_valor" DESC
+        ORDER BY "cnes_id" DESC
         LIMIT 20
     """
 
