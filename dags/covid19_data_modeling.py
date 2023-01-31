@@ -149,6 +149,8 @@ def process_data(**kwargs):
     cnes_df = get_data_from_cnes(cnes_code)
 
     df = df.merge(cnes_df, how='inner', on='cnes_id')
+    df['vacina_dataaplicacao'] = df['vacina_dataaplicacao']\
+        .apply(lambda date: dt.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.000").date()).astype(str)
 
     return df.to_json(orient="columns", date_format="iso")
 
