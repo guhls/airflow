@@ -1,6 +1,8 @@
 # Imports
 import datetime as dt
 import os
+import boto3
+import io
 
 import pandas.errors
 import requests
@@ -20,6 +22,8 @@ from auth.google.creds import get_creds
 
 load_dotenv()
 
+BUCKET = os.environ.get("S3_BUCKET")
+FILE_PATH = os.environ.get("FILE_PATH")
 S3_COVID_EXTRACT = os.environ.get("S3_COVID_EXTRACT")
 POSTGRES_ENV = {
     'host': os.environ.get("host"),
@@ -135,6 +139,7 @@ def send_df_to_sheets(df, sheets_id, range_sheet):
 
     sheet = service_sheets.spreadsheets()
 
+    df = df.fillna("")
     values = [list(df)] + df.values.tolist()[0:]
 
     sheet.values().clear(spreadsheetId=sheets_id, range=range_sheet).execute()
@@ -151,6 +156,20 @@ def send_df_to_sheets(df, sheets_id, range_sheet):
     )
 
     return result
+
+
+def send_df_to_s3(df, bucket, file_path, date):
+    parquet_buffer = io.BytesIO()
+    df.to_parquet(parquet_buffer, engine="pyarrow", index=False)
+    parquet_buffer.seek(0)
+
+    s3 = boto3.client('s3')
+    return s3.upload_fileobj(
+        Fileobj=parquet_buffer,
+        Bucket=bucket,
+        Key=f"{file_path}/dt={date}/data.parquet"
+    )
+
 
 # Tasks functions
 
@@ -171,7 +190,7 @@ def process_data(**kwargs):
     cnes_df = get_data_from_cnes(cnes_code)
 
     df = df.merge(cnes_df, how='inner', on='cnes_id')
-    df['vacina_dataaplicacao'] = df['vacina_dataaplicacao']\
+    df['dt'] = df['vacina_dataaplicacao']\
         .apply(lambda date: dt.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.000").date()).astype(str)
 
     return df.to_json(orient="columns", date_format="iso")
@@ -181,9 +200,15 @@ def upload_data(**kwargs):
     data = kwargs["task_instance"].xcom_pull(task_ids="process_data_task")
     sheets_id = str(kwargs["sheet_id"])
     range_sheet = str(kwargs["range"])
+    bucket = str(kwargs['bucket'])
+    file_path = str(kwargs['file_path'])
 
     df = pd.read_json(data)
+    date = df['dt'][0]
+    df['cep_estabelecimento'] = df['cep_estabelecimento'].astype(str)
+
     send_df_to_sheets(df, sheets_id, range_sheet)
+    send_df_to_s3(df, bucket, file_path, date)
 
 
 # DAG
@@ -202,7 +227,7 @@ query = """
         FROM "final"."covid19_vac_sp_view"
         WHERE "vacina_dataaplicacao" = date('2023-01-20')
         ORDER BY "cnes_id" DESC
-        LIMIT 20
+        LIMIT 100 
     """
 
 extract_data_task = PythonOperator(
@@ -223,7 +248,7 @@ range_ = "covid19!A1:V"
 upload_data_task = PythonOperator(
     task_id="upload_data_task",
     python_callable=upload_data,
-    op_kwargs={"sheet_id": sheet_id, "range": range_},
+    op_kwargs={"sheet_id": sheet_id, "range": range_, "bucket": BUCKET, "file_path": FILE_PATH},
     dag=dag,
 )
 
