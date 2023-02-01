@@ -227,7 +227,7 @@ query = """
         FROM "final"."covid19_vac_sp_view"
         WHERE "vacina_dataaplicacao" = date('2023-01-20')
         ORDER BY "cnes_id" DESC
-        LIMIT 100 
+        LIMIT 20
     """
 
 extract_data_task = PythonOperator(
