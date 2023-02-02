@@ -1,5 +1,6 @@
 # Imports
 import datetime as dt
+from datetime import timedelta
 import os
 import boto3
 import io
@@ -176,8 +177,12 @@ def send_df_to_s3(df, bucket, file_path, date):
 
 def extract_data(**kwargs):
     query_athena = str(kwargs["query"])
+    date = kwargs['execution_date']
 
-    df = get_data_from_athena(query_athena, S3_COVID_EXTRACT)
+    df = get_data_from_athena(
+        query_athena.format(date.strftime("%Y-%m-%d")),
+        S3_COVID_EXTRACT
+    )
 
     return df.to_json(orient="columns", date_format="iso")
 
@@ -213,7 +218,13 @@ def upload_data(**kwargs):
 
 # DAG
 
-default_args = {"owner": "admin", "start_date": dt.datetime(2023, 1, 1)}
+default_args = {
+    "owner": "admin",
+    "retries": 1,
+    "retry_delay": timedelta(minutes=1),
+    "start_date": dt.datetime(2023, 1, 19),
+    "end_date": dt.datetime(2023, 1, 25)
+}
 
 dag = DAG(
     dag_id="covid19_data_modeling",
@@ -225,15 +236,15 @@ dag = DAG(
 query = """
         SELECT *
         FROM "final"."covid19_vac_sp_view"
-        WHERE "vacina_dataaplicacao" = date('2023-01-20')
+        WHERE "vacina_dataaplicacao" = date('{}')
         ORDER BY "cnes_id" DESC
-        LIMIT 20
     """
 
 extract_data_task = PythonOperator(
     task_id="extract_data_task",
     python_callable=extract_data,
     op_kwargs={"query": query},
+    provide_context=True,
     dag=dag,
 )
 
