@@ -21,9 +21,13 @@ from auth.google.creds import get_creds
 load_dotenv()
 
 BUCKET = os.environ.get("S3_BUCKET")
-FILE_PATH_UPLOAD = os.environ.get("FILE_PATH")
-S3_COVID_EXTRACT = os.environ.get("S3_COVID_EXTRACT")
 REGION_NAME = os.environ.get("REGION_NAME")
+
+FILE_PATH_UPLOAD = os.environ.get("FILE_PATH")
+FILE_PATH_LACK_IDS = os.environ.get("FILE_PATH_LACK_IDS")
+
+S3_STAGING_DIR = os.environ.get("S3_STAGING_DIR")
+
 POSTGRES_ENV = {
     'host': os.environ.get("host"),
     'database': os.environ.get("database"),
@@ -39,7 +43,7 @@ path_root = Path(__file__).parent.parent
 
 def get_data_from_athena(query_athena, as_df: bool = False):
     conn = pyathena.connect(
-        s3_staging_dir=S3_COVID_EXTRACT,
+        s3_staging_dir=S3_STAGING_DIR,
         region_name=REGION_NAME
     )
 
@@ -55,30 +59,10 @@ def get_data_from_athena(query_athena, as_df: bool = False):
     return result
 
 
-def get_df_from_ids(ids):
-    lst_dfs = []
-    lst_ids_lack = []
-    for cnes_id in ids:
-        uri = f"https://apidadosabertos.saude.gov.br/cnes/estabelecimentos/{cnes_id}"
-        resp_data = requests.get(uri).json()
-
-        df = pd.json_normalize(resp_data)
-        lst_dfs.append(df)
-
-        try:
-            print(df['codigo_cnes'])
-        except KeyError:
-            lst_ids_lack.append(cnes_id)
-            print(f"{cnes_id } not found")
-
-    df_final = pd.concat(lst_dfs).reset_index(drop=True)
-    return df_final
-
-
 def send_df_to_s3(df_to_s3, bucket, file_path, query_recreate_parquet=None):
     if query_recreate_parquet:
-        df_geolocation = get_data_from_athena(query_recreate_parquet, as_df=True)
-        df_to_s3 = pd.concat([df_geolocation, df_to_s3], ignore_index=True).reset_index(drop=True)
+        df_hf = get_data_from_athena(query_recreate_parquet, as_df=True)
+        df_to_s3 = pd.concat([df_hf, df_to_s3], ignore_index=True).reset_index(drop=True)
 
     parquet_buffer = io.BytesIO()
     df_to_s3.to_parquet(parquet_buffer, engine="pyarrow", index=False)
@@ -90,6 +74,42 @@ def send_df_to_s3(df_to_s3, bucket, file_path, query_recreate_parquet=None):
         Bucket=bucket,
         Key=file_path
     )
+
+
+def get_df_from_ids(ids):
+    lst_dfs = []
+    lst_ids_lack = []
+    for cnes_id in ids:
+        uri = f"https://apidadosabertos.saude.gov.br/cnes/estabelecimentos/{cnes_id}"
+        resp_data = requests.get(uri).json()
+
+        try:
+            print(resp_data['codigo_cnes'])
+        except KeyError:
+            print(f"{cnes_id} not found")
+            lst_ids_lack.append(cnes_id)
+            continue
+
+        df = pd.json_normalize(resp_data)
+
+        lst_dfs.append(df)
+
+    if lst_ids_lack:
+        df_ids_lack = pd.DataFrame({"cnes_id": lst_ids_lack})
+
+        query_lack_ids = "SELECT cnes_id FROM final.lack_cnes_id"
+        send_df_to_s3(
+            df_ids_lack,
+            bucket=BUCKET,
+            file_path=FILE_PATH_LACK_IDS,
+            query_recreate_parquet=query_lack_ids
+        )
+
+    if lst_dfs:
+        df_final = pd.concat(lst_dfs).reset_index(drop=True)
+        return df_final
+
+    return pd.DataFrame()
 
 
 def rename_cnes_df(df):
@@ -125,6 +145,11 @@ def update_healthcare_facilities(cnes_ids):
     ids_to_add = set(cnes_ids) - set(cnes_ids_hf)
     if ids_to_add:
         df_to_s3 = get_df_from_ids(ids_to_add)
+
+        if df_to_s3.empty:
+            print("Nothing to add")
+            return
+
         df_to_s3 = rename_cnes_df(df_to_s3)
 
         query_recreate_parquet = "SELECT * FROM final.covid19_healthcare_facilities"
@@ -179,16 +204,16 @@ def process_data(**kwargs):
     update_healthcare_facilities(cnes_ids)
 
     query_geolocation = f"""
-        SELECT vacina_dataaplicacao, SUM(vacinacoes) total_vacinacoes
-        FROM "final"."covid19_vac_sp_geolocation_view"
-        WHERE "vacina_dataaplicacao" = ('{execution_date.strftime("%Y-%m-%d")}')
+        SELECT vacina_dataaplicacao, COUNT(*) total_vacinacoes
+        FROM "final"."covid19_vac_sp_view" 
+        WHERE "vacina_dataaplicacao" = date('{execution_date.strftime("%Y-%m-%d")}') AND 
+        "cnes_id" NOT IN (SELECT "cnes_id" FROM "final"."lack_cnes_id")
         GROUP BY vacina_dataaplicacao
     """
 
     df = get_data_from_athena(query_geolocation, as_df=True)
 
     df['vacina_dataaplicacao'] = df['vacina_dataaplicacao'].astype(str)
-    df['cep_estabelecimento'] = df['cep_estabelecimento'].astype(str)
 
     return df.to_json(orient="columns")
 
@@ -255,4 +280,4 @@ extract_data_task >> process_data_task >> upload_data_task
 
 
 if __name__ == "__main__":
-    update_healthcare_facilities([124, 9997423, 429031, 429023, 35, 7961596])
+    update_healthcare_facilities([2065118, 2061252, 2087324, 6322646])
