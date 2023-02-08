@@ -6,7 +6,6 @@ import boto3
 import io
 
 import requests
-from pathlib import Path
 
 import pandas as pd
 import pyathena
@@ -27,16 +26,6 @@ FILE_PATH_UPLOAD = os.environ.get("FILE_PATH")
 FILE_PATH_LACK_IDS = os.environ.get("FILE_PATH_LACK_IDS")
 
 S3_STAGING_DIR = os.environ.get("S3_STAGING_DIR")
-
-POSTGRES_ENV = {
-    'host': os.environ.get("host"),
-    'database': os.environ.get("database"),
-    'user': os.environ.get("user"),
-    'password': os.environ.get("password"),
-    'connect_timeout': int(os.environ.get("connect_timeout"))
-}
-
-path_root = Path(__file__).parent.parent
 
 # Functions
 
