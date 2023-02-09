@@ -159,13 +159,18 @@ def send_df_to_sheets(df, sheets_id, range_sheet):
 
     try:
         df_sheets = pd.DataFrame(
-            columns=data_sheets[0],
-            data=[row for row in data_sheets[1:]]
+            columns=data_sheets['values'][0],
+            data=[row for row in data_sheets['values'][1:]],
+            dtype=str
         )
 
-        df = pd.concat([df, df_sheets], ignore_index=True)
-    except KeyError:
-        print("No data in sheets")
+        df_merged = pd.merge(df, df_sheets, how='outer', on='vacina_dataaplicacao')
+
+        df_merged.loc[df_merged['total_vacinacoes_x'].isnull(), 'total_vacinacoes_x'] = df_merged['total_vacinacoes_y']
+        df_merged.drop(['total_vacinacoes_y'], axis=1, inplace=True)
+        df = df_merged.rename({'total_vacinacoes_x': 'total_vacinacoes'}, axis=1).sort_values(by='vacina_dataaplicacao')
+    except KeyError as e:
+        print(f"{e}: No data in sheets")
 
     df = df.fillna("")
     values = [list(df)] + df.values.tolist()[0:]
@@ -285,5 +290,8 @@ if __name__ == "__main__":
 
     path_root = Path(__file__).parent.parent
 
-    df_run = pd.read_csv(f"{path_root}/23_01_19_vac.csv")
+    df_run = pd.read_csv(
+        f"{path_root}/23_01_19_vac.csv",
+        dtype=str
+    )
     send_df_to_sheets(df_run, sheets_id=sheet_id, range_sheet=range_)
