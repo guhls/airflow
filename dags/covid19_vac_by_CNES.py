@@ -155,6 +155,18 @@ def send_df_to_sheets(df, sheets_id, range_sheet):
 
     sheet = service_sheets.spreadsheets()
 
+    data_sheets = sheet.values().get(spreadsheetId=sheets_id, range=range_sheet).execute()
+
+    try:
+        df_sheets = pd.DataFrame(
+            columns=data_sheets[0],
+            data=[row for row in data_sheets[1:]]
+        )
+
+        df = pd.concat([df, df_sheets], ignore_index=True)
+    except KeyError:
+        print("No data in sheets")
+
     df = df.fillna("")
     values = [list(df)] + df.values.tolist()[0:]
 
@@ -269,4 +281,9 @@ extract_data_task >> process_data_task >> upload_data_task
 
 
 if __name__ == "__main__":
-    update_healthcare_facilities([2065118, 2061252, 2087324, 6322646])
+    from pathlib import Path
+
+    path_root = Path(__file__).parent.parent
+
+    df_run = pd.read_csv(f"{path_root}/23_01_19_vac.csv")
+    send_df_to_sheets(df_run, sheets_id=sheet_id, range_sheet=range_)
